@@ -1,216 +1,257 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
-const database = new sqlite3.Database("./school.db");
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const auth = require("./middleware/auth");
-const {validateUserSignUp, userValidation} = require('./middleware/validation/user')
-const {registerUser} = require('./controllers/user')
-const docs = require('./docs');
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
-const multer = require('multer');
-const path = require('path');
-
-
-require("dotenv").config(); //Obtenir des variables d'environnement à partir de fichiers .env
-//La bibliothèque dotenv, qui nous permet de charger 
-//des variables d'environnement à partir d'un fichier, 
-//peut être utilisée. Chaque environnement possède 
-//ses propres informations de configuration, 
-//qui peuvent être un jeton, des informations
-// d'identification de base de données, etc. 
-//Les configurations séparées facilitent le déploiement
-// de notre application dans différents environnements.
-// https://swagger.io/specification/#infoObject
-
-// const swaggerOptions = {
-//   swaggerDefinition : {
-//       info: {
-//           title: 'School API',
-//           description: 'Student API information',
-//           contact: {
-//               name: 'Lorry James'
-//           },
-//           server: ["http://localhost:3000"]
-//       }
-//   },
-//   apis: ["index.js"]
-// };
-
-//const swaggerDocs = swaggerJsDoc(swaggerOptions);
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+require("dotenv").config()
 
 const app = express();
 const router = express.Router();
+const port = process.env.PORT || 3000;
 
-router.use(bodyParser.urlencoded({ extended : false }));
+router.use(bodyParser.urlencoded({extended: false}));
 router.use(bodyParser.json());
 
-//router.use('/api-docs',swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-app.use('/api-docs',swaggerUi.serve,swaggerUi.setup(docs));
+app.use(router)
 
-//storage engine
-const storage = multer.diskStorage({
-    destination: './upolad/images',
-    filename: (req, file, cb) => {
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
-    }
-});
+const auth = require("./middleware/auth");
+const {validateUserSignUp, registerValidation, validateUserLogin, loginValidation} = require("./middleware/validation/user");
+const {registerUser, loginUser} = require("./controllers/user");
+const {validationAddStudent, addStudentValidation, validationEditStudent} = require("./middleware/validation/student");
+const {addStudent, editStudent, deleteStudent} = require("./controllers/student");
+const {validationAddEvaluation, addEvalValidation, validationEditEvaluation} = require("./middleware/validation/evaluation");
+const {addEval, editEvaluation, delEval} = require("./controllers/evaluation");
+const {validationAddResult, addResultValidation, validationEditResult} = require("./middleware/validation/results");
+const {addResult, editResult, deleteResult} = require("./controllers/results");
 
-
-const upload = multer ({
-   storage: storage,
-   limits: {fileSize: 1024*1024*10}
-});
-
-//router.use('/profile ', express.static('/upload/images'));
-
-
-router.post("/upload", upload.single('profile'), (req, res) =>{
-    console.log(req.file);
-
-    res.json({
-        success : true,
-        profile_url: `http://localhost:3000/profile/${req.file.filename}`
-    })
-});
-
-function erHandler(err, req, res, next){
-    if(err instanceof multer.MulterError){
-        res.json ({
-            success: false,
-            message: err.message
-        })
-    }
+const swaggerOptions = {
+    swaggerDefinition : {
+        info: {
+            title: "TP02 API",
+            description: "TP02 API",
+            contact: {
+                name: "Bilal Khendaf"
+            },
+            servers: ["http://localhost:3000"]
+        }
+    },
+    apis: ["index.js"]
 }
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-router.use(erHandler);
-
- router.get('/users', (req, res, next) => {
-    findAllUsers((err, users) => {
-        if (err) return res.status(500).send('Server error!');
-        if (!users) return res.status(404).send('No Users found!');
-        res.status(200).send({
-            "users": users
-        });
-    //res.json([{id: 1, name: 'James'}, {id: 2, name: 'Lorry'}])
-    });
-});
-    
-router.get('/', (req, res) => {
-    res.status(200).send('Ceci est un serveur d authentification');
-});
-
-router.post('/register', validateUserSignUp, userValidation,registerUser);
+router.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 
+router.post('/signup', validateUserSignUp, registerValidation, registerUser) //Créer la route qui permet d’enregistrer un utilisateur (http://localhost:3000/signup)
+router.post('/login',validateUserLogin,loginValidation,loginUser) //Créer la route qui permet de se connecter (http://localhost:3000/login)
+router.post('/addStudent',auth,validationAddStudent,addStudentValidation,addStudent) //Créer la route qui permet d’ajouter un étudiant (http://localhost:3000/addStudent)
+router.post('/addEvaluation',auth,validationAddEvaluation, addEvalValidation, addEval) //Créer la route qui permet d’ajouter une évaluation (http://localhost:3000/addEvaluation)
+router.post('/addResult',auth,validationAddResult, addResultValidation, addResult) //Créer la route qui permet d’ajouter un résultat (http://localhost:3000/addResult)
 
-router.post('/login', (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    findUserByEmail(email, (err, user) => {
-        if (err) return res.status(500).send('Server error!');
-        if (!user) return res.status(404).send('User not found!');
-        const result = bcrypt.compareSync(password, user.password);
-        if (!result) return res.status(401).send('Password not valid!');
+router.put('/editStudent/:id',auth,validationAddStudent,addStudentValidation, editStudent) //Créer la route qui permet de modifier un étudiant (http://localhost:3000/editStudent/:id)
+router.put('/editEvaluation/:id',auth,validationAddEvaluation, addEvalValidation, editEvaluation) //Créer la route qui permet de modifier une évaluation (http://localhost:3000/editEvaluation/:id)
+router.put('/editResult/:id',auth,validationEditResult, addResultValidation, editResult) //Créer la route qui permet de modifier un résultat (http://localhost:3000/editResult/:id)
 
-        const expiresIn = 20;
-        const accessToken = jwt.sign({ id: user.id }, process.env.TOKEN_KEY, {
-            expiresIn: expiresIn
-        });
-        res.status(200).send({"access_token": accessToken, "expires_in": expiresIn });
-    });
-});
-app.use(router);
-const port = process.env.PORT || 3000;
+router.delete('/delStudent/:id',auth,validationEditStudent, addStudentValidation, deleteStudent) //Créer la route qui permet de supprimer un étudiant (http://localhost:3000/delStudent/:id)
+router.delete('/delEvaluation/:id',auth,validationEditEvaluation, addEvalValidation, delEval) //Créer la route qui permet de supprimer une évaluation (http://localhost:3000/delEvaluation/:id)
+router.delete('/delResult/:eval_id',auth,validationEditResult, addResultValidation, deleteResult) //Créer la route qui permet de supprimer un résultat (http://localhost:3000/delResult/:id)
+/**
+ * @swagger
+ * /signup:
+ *   post:
+ *     parameters:
+ *      - in: body
+ *        name: user
+ *        schema:
+ *          type: object
+ *          required:
+ *            - email
+ *            - password
+ *            - name
+ *          properties:
+ *            email:
+ *              type: string
+ *              example: email@email.com
+ *            password:
+ *              type: string
+ *              example: password12345
+ *            name:
+ *              type: string
+ *              example: nameUnDeuxTrois
+ *        responses:
+ *          201:
+ *            description: User created
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: User created
+ *
+ * /login:
+ *   post:
+ *     parameters:
+ *      - in: body
+ *        name: user
+ *        schema:
+ *          type: object
+ *          required:
+ *            - email
+ *            - password
+ *          properties:
+ *            email:
+ *              type: string
+ *              example: email@email.com
+ *            password:
+ *              type: string
+ *              example: password12345
+ *          responses:
+ *            200:
+ *              description: User logged in
+ * /addStudent:
+ *   post:
+ *     parameters:
+ *      - in: body
+ *        name: student
+ *        schema:
+ *          type: object
+ *          required:
+ *            - first_name
+ *            - last_name
+ *            - email
+ *          properties:
+ *            email:
+ *              type: string
+ *              example: email@email.com
+ *            last_name:
+ *              type: string
+ *              example: last_name
+ *            first_name:
+ *              type: string
+ *              example: first_name
+ *          responses:
+ *              201:
+ *                description: Student created
+ * /addEvaluation:
+ *   post:
+ *     parameters:
+ *      - in: body
+ *        name: Evaluation
+ *        schema:
+ *          type: object
+ *          required:
+ *            - name
+ *          properties:
+ *            name:
+ *              type: string
+ *              example: last_name
+ *          responses:
+ *              201:
+ *                description: Student created
+ * /addResult:
+ *   post:
+ *     summary: Add a result
+ *     description: Add a result
+ *     parameters:
+ *      - in: body
+ *        name: student
+ *        schema:
+ *          type: object
+ *          required:
+ *            - student_id
+ *            - eval_id
+ *            - note
+ *          properties:
+ *            student_id:
+ *              type: string
+ *              example: 1
+ *            eval_id:
+ *              type: string
+ *              example: 1
+ *            note:
+ *              type: integer
+ *              example: 100
+ *          responses:
+ *              201:
+ *                description: Student created
+ *
+ * /editStudent:
+ *   put:
+ *     summary: Update a user
+ *     description: Update a user
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: User ID
+ *
+ * /editEvaluation:
+ *   put:
+ *     summary: Update an evaluation
+ *     description: Update an evaluation
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: Evaluation ID
+ *
+ * /editResult:
+ *   put:
+ *     summary: Update an Result
+ *     description: Update an Result
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: Result ID
+ *
+ * /delStudent:
+ *   delete:
+ *     summary: Delete a student
+ *     description: Delete a student
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: student ID
+ *
+ * /delEvaluation:
+ *   delete:
+ *     summary: Delete a Evaluation
+ *     description: Delete a Evaluation
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: Evalutation ID
+ *
+ * /delResult:
+ *   delete:
+ *     summary: Delete a Result
+ *     description: Delete a Result
+ *     parameters:
+ *      - in: query
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: string
+ *          minimum: 1
+ *          description: Result ID
+ */
 const server = app.listen(port, () => {
     console.log(`L'API peut maintenant recevoir des requêtes http://localhost:` + port);
 });
-
-const createUsersTable = () => {
-    const sqlQuery = `CREATE TABLE IF NOT EXISTS users (id integer PRIMARY KEY, name text, email text UNIQUE,password text)`;
-            return database.run(sqlQuery);
-    }
-    
-    const findUserByEmail = (email, cb) => {
-        return database.get(`SELECT * FROM users WHERE email = ?`, [email], (err, row) => {
-            cb(err, row)
-        });
-    }
-    
-    const createUser = (user, cb) => {
-        return database.run('INSERT INTO users (name, email, password) VALUES (?,?,?)', user, (err) => {
-            cb(err)
-        });
-    }
-
-    const findAllUsers = (cb) => {
-        return database.all(`SELECT * FROM users`, (err, rows) => {
-            cb(err, rows)
-        });
-    }
-    
-    createUsersTable();
-
-
-    router.get('/user/:email', (req, res) => {
-        console.log(req.params.email)
-        findUserByEmail(req.params.email, (err, user) => {
-            if (err) return res.status(500).send('Server error');
-            if (!user) return res.status(404).send('User not found!');
-            res.status(200).send({
-                "user": user
-            });
-        });
-      });
-
-
-/**
-     * 
-     * @swagger
-     * /updateUser/maison@mail.com:
-     *  put:
-     *    description: Update User by email
-     *    parameters:
-     *    - name: name
-     *      description: Name of the User
-     *      in: body
-     *      required: true
-     *      type: string
-     *    responses:
-     *      '201':
-     *        description: Create
-     */
-      router.put('/updateUser/:email', (req, res) => {
-         findUserByEmail(req.params.email, (err, user) => {
-            if (err) return res.status(500).send('Server error');
-            if (!user) return res.status(404).send('User not found!');
-            updateUser(req.body.name, req.params.email, (err) => {
-                if (err) {
-                   return res.status(500).send("Server error!!!!");
-                    
-                }
-                res.status(200).send({
-                    "Message": "User modifié!!"
-                });
-            });
-           
-        });
-      });
-
-
-      
-
-app.post("/welcome", auth, (req, res) => {
-  res.status(200).send("Bienvenue, votre Jeton est valid!!");
-});
-
-      const updateUser = (name, email, cb) => {
-               return database.get(`UPDATE users set name =? WHERE email = ?`, name, email, (err, row) => {
-                cb(err, row)
-            });
-        }
-      
-
-  

@@ -1,5 +1,5 @@
 {
-  "name": "express-auth-project",
+  "name": "tp02",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,17 +12,14 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.19.2",
-    "docs": "^0.3.2-canary.0",
+    "body-parser": "^1.20.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
-    "express-openapi-validator": "^4.13.7",
     "express-validator": "^6.14.0",
     "jsonwebtoken": "^8.5.1",
-    "multer": "^1.4.4",
-    "nodemon": "^2.0.15",
+    "nodemon": "^1.18.7",
     "sqlite3": "^5.0.2",
-    "swagger-jsdoc": "^6.1.0",
+    "swagger-jsdoc": "^6.2.0",
     "swagger-ui-express": "^4.3.0"
   }
 }
