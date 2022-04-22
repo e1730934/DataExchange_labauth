@@ -1,32 +1,29 @@
-const {check, validationResult} = require('express-validator');
-
-exports.validateUserSignUp =[
+const {check, validationResult } = require('express-validator');
+exports.validateUserSignUp = [
     check('name')
-        .trim()
-        .not()
-        .isEmpty()
-        .isLength({min: 3, max: 20})
-        .withMessage('Name must be between 3 and 20 characters'),
-    check('email').normalizeEmail()
-        .isEmail()
-        .withMessage('Email is invalid'),
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Name is Empty')
+    .isLength({min:3, max: 20})
+    .withMessage('Name must be within 3 to 20 character!'),
+    check('email').normalizeEmail().isEmail().withMessage('Invalid email!'),
     check('password')
-        .trim()
-        .not()
-        .isEmpty()
-        .isLength({min: 8, max: 20})
-        .withMessage('Password must be between 8 and 20 characters'),
-]
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('Password is Empty')
+    .isLength({min: 8, max:20})
+    .withMessage('Password must be within 8 to 20 character!'),
+];
 
-exports.userValidation= (req, res, next) =>{
+
+exports.userValidation = (req, res, next) => {
+
     const result = validationResult(req).array()
-    if(!result.length){
-        next()
-    }   const error = result.filter(err => err.msg).map(err => err.msg)
-        res.json({
-            success: false,
-            message: error
-        })
-
-}
+    console.log(result);
+     if(!result.length) return next();
+     const error = result[0].msg;
+     res.json({success: false, message:error})
+};
 

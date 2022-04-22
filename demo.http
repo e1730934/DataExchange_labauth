@@ -1,6 +1,3 @@
-curl -X POST \
-  http://localhost:3000/welcome/ \
-  -H 'cache-control: no-cache' \
-  -H 'content-type: application/x-www-form-urlencoded' \
-  -H 'postman-token: a05c8b5b-fead-b924-8c48-b6428e9cebd6' \
-  -d token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNjQ3NDQxMTIxLCJleHAiOjE2NDc1Mjc1MjF9.8mVtMLIatv4ZeQqG5zzYtgCMP3u38dU28oqoZqXtNyc
+curl -X 'GET' \
+  'http://localhost:3000/users' \
+  -H 'accept: application/json'

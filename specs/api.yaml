@@ -1,0 +1,59 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Service de données pour l'application SCHOOL
+paths:
+  /users:
+    get:
+      description: | 
+        Returns all users from the database
+      operationId: findUsers
+      parameters:
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: true
+          schema:
+            type: interger
+            format: int32
+            minimum: 1
+      responses:
+        '200':
+          description: La liste est retournée
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'  
+    
+components:
+   schemas:
+    User:
+      type: object  
+      properties:
+        name: 
+          type: string
+        password:
+          type: string
+        email:
+          type: string 
+     
+    # User:
+    #   type: object
+    #   required:
+    #     - user
+    #   properties:
+    #     user:
+    #       type: object
+    #       required:
+    #         - name
+    #         - email
+    #         - id
+    #       properties:            
+    #         name:
+    #           type: string
+    #         id:
+    #           type: number
+    #         email:
+    #           type: string
